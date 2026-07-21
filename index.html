@@ -41,7 +41,7 @@
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <img src="https://i.ibb.co/4ZhnSV1Q/cropped-circle-1.png" alt="לוגו חדשות ראשונות" 
-             class="w-12 h-12 rounded-full border-2 border-red-600 protected-img" oncontextmenu="return false;">
+             class="w-12 h-12 rounded-full protected-img" oncontextmenu="return false;">
         <div>
           <h1 class="text-xl font-black text-red-500 tracking-wide">חדשות ראשונות</h1>
           <p class="text-xs text-slate-400">המקום הנכון לחדשות אמינות</p>
@@ -75,7 +75,7 @@
   <!-- Main Layout -->
   <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full grid grid-cols-1 lg:grid-cols-4 gap-6">
     
-    <!-- Left/Center Main Column: Articles & Contact -->
+    <!-- Left/Center Main Column: Articles, Flashes & Contact -->
     <section class="lg:col-span-3 space-y-6">
       
       <!-- Categories Navigation -->
@@ -88,14 +88,24 @@
         <p class="text-center text-slate-400 py-10">טוען כתבות...</p>
       </div>
 
+      <!-- Flashes Section (Moved directly above Contact Form) -->
+      <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-md mt-10">
+        <h2 class="text-lg font-black text-red-500 mb-4 border-b border-slate-700 pb-2 flex items-center gap-2">
+          <i class="fa-solid fa-bolt text-amber-400"></i> מבזקים שוטפים
+        </h2>
+        <div id="flashes-list" class="space-y-3">
+          <p class="text-xs text-slate-400">טוען מבזקים...</p>
+        </div>
+      </div>
+
       <!-- Contact Form Section -->
-      <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 mt-12">
+      <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 mt-6">
         <h2 class="text-xl font-bold mb-4 text-red-400 flex items-center gap-2">
           <i class="fa-solid fa-envelope"></i> צור קשר עם המערכת
         </h2>
         <form id="contact-form" onsubmit="submitContact(event)" class="space-y-4">
           <div>
-            <label class="block text-xs font-semibold mb-1">שם מלא*</label>
+            <label class="block text-xs font-semibold mb-1">שם מלא <span class="text-red-500">*</span></label>
             <input type="text" id="c-name" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -104,7 +114,7 @@
               <input type="tel" id="c-phone" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
             </div>
             <div>
-              <label class="block text-xs font-semibold mb-1">אימייל)</label>
+              <label class="block text-xs font-semibold mb-1">אימייל</label>
               <input type="email" id="c-email" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
             </div>
           </div>
@@ -113,7 +123,7 @@
             <input type="file" id="c-files" multiple accept="image/*" class="w-full text-xs text-slate-400 bg-slate-900 p-2 rounded-lg border border-slate-700">
           </div>
           <div>
-            <label class="block text-xs font-semibold mb-1">תוכן ההודעה*</label>
+            <label class="block text-xs font-semibold mb-1">תוכן ההודעה <span class="text-red-500">*</span></label>
             <textarea id="c-msg" required rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm"></textarea>
           </div>
           <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-6 rounded-lg text-sm transition">
@@ -124,21 +134,11 @@
 
     </section>
 
-    <!-- Right Sidebar: Flashes & Telegram Track -->
+    <!-- Right Sidebar: Telegram Box -->
     <aside class="space-y-6">
       
-      <!-- Flashes Section -->
-      <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-md">
-        <h2 class="text-lg font-black text-red-500 mb-4 border-b border-slate-700 pb-2 flex items-center gap-2">
-          <i class="fa-solid fa-bolt text-amber-400"></i> מבזקים שוטפים
-        </h2>
-        <div id="flashes-list" class="space-y-3">
-          <p class="text-xs text-slate-400">טוען מבזקים...</p>
-        </div>
-      </div>
-
       <!-- Telegram Join Box -->
-      <div class="bg-gradient-to-br from-blue-900 to-slate-800 p-5 rounded-2xl border border-blue-700/50 text-center">
+      <div class="bg-gradient-to-br from-blue-900 to-slate-800 p-5 rounded-2xl border border-blue-700/50 text-center sticky top-20">
         <i class="fa-brands fa-telegram text-4xl text-blue-400 mb-2"></i>
         <h3 class="font-bold text-base mb-1">הערוץ הרשמי בטלגרם</h3>
         <p class="text-xs text-slate-300 mb-4">הצטרפו לערוץ הדיווחים השוטפים וקבלו מבזקים בזמן אמת</p>
@@ -203,11 +203,11 @@
       <h3 id="auth-title" class="text-lg font-bold mb-4">התחברות / הרשמה</h3>
       <form id="auth-form" onsubmit="handleAuth(event)" class="space-y-4">
         <div>
-          <label class="block text-xs mb-1">אימייל</label>
+          <label class="block text-xs mb-1">אימייל <span class="text-red-500">*</span></label>
           <input type="email" id="auth-email" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm">
         </div>
         <div>
-          <label class="block text-xs mb-1">סיסמה</label>
+          <label class="block text-xs mb-1">סיסמה <span class="text-red-500">*</span></label>
           <input type="password" id="auth-pass" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm">
         </div>
         <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg text-sm">אישור</button>
