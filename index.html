@@ -90,7 +90,7 @@
     <!-- Left/Center Main Column: Articles, Flashes & Contact -->
     <section class="lg:col-span-3 space-y-6">
       
-      <!-- Active Filter Banner (Shown when filtering by category/tag/author) -->
+      <!-- Active Filter Banner -->
       <div id="filter-banner" class="hidden bg-slate-800 border border-red-500/50 p-3 rounded-xl flex justify-between items-center text-xs">
         <span id="filter-text" class="font-semibold text-red-400"></span>
         <button onclick="resetView()" class="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded-lg text-slate-200 transition">הצג את כל הכתבות</button>
@@ -101,14 +101,14 @@
         <!-- Rendered dynamically -->
       </div>
 
-      <!-- Articles Container -->
+      <!-- Articles Container / Single Article View / All Articles View -->
       <div id="articles-list" class="space-y-6">
         <p class="text-center text-slate-400 py-10">טוען כתבות...</p>
       </div>
 
-      <!-- View All Articles Button Container -->
+      <!-- View All Articles Button Container (Directly below 5 articles) -->
       <div id="view-all-articles-container" class="text-center hidden">
-        <button onclick="showAllArticles()" class="bg-slate-800 hover:bg-slate-700 text-red-400 border border-slate-700 font-bold py-2.5 px-6 rounded-xl text-sm transition shadow">
+        <button onclick="showAllArticlesPage()" class="bg-slate-800 hover:bg-slate-700 text-red-400 border border-slate-700 font-bold py-2.5 px-6 rounded-xl text-sm transition shadow">
           לכל הכתבות <i class="fa-solid fa-arrow-left mr-1"></i>
         </button>
       </div>
@@ -122,7 +122,7 @@
           <p class="text-xs text-slate-400">טוען מבזקים...</p>
         </div>
         <div id="view-all-flashes-container" class="text-center mt-4 hidden">
-          <button onclick="showAllFlashes()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold py-2 px-5 rounded-xl text-xs transition">
+          <button onclick="showAllFlashesPage()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold py-2 px-5 rounded-xl text-xs transition">
             לכל המבזקים <i class="fa-solid fa-arrow-left mr-1"></i>
           </button>
         </div>
@@ -167,10 +167,10 @@
     <!-- Right Sidebar: Newsletter & Telegram Box -->
     <aside class="space-y-6">
       
-      <!-- Newsletter Box (Moved above Telegram) -->
+      <!-- Newsletter Box -->
       <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-md">
         <h4 class="font-bold text-slate-200 mb-2 text-sm flex items-center gap-2">
-          <i class="fa-solid id-card text-red-500"></i> הרשמה לניוזלטר
+          <i class="fa-solid fa-envelope-open-text text-red-500"></i> הרשמה לניוזלטר
         </h4>
         <form id="newsletter-form" onsubmit="submitNewsletter(event)" class="space-y-3">
           <input type="text" id="nl-name" placeholder="שם מלא" required class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-3 py-2.5 w-full">
@@ -261,7 +261,7 @@
   <!-- Firebase Integration -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, doc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -280,20 +280,33 @@
 
     const BOT_TOKEN = "8653137296:AAEcyuGw0896waV2NjQm9_1Og6BQD776IR8";
     const CHAT_ID = "-1004227502554";
+    const SUPER_ADMIN_EMAIL = "pyldmkdj@gmail.com";
     
     let currentUser = null;
     let articlesData = [];
     let flashesData = [];
     let currentCategory = 'all';
-    let activeFilter = null; // { type: 'category'|'tag'|'author', value: '...' }
-    let viewingAllArticles = false;
-    let viewingAllFlashes = false;
+    let activeFilter = null; 
+    let currentViewMode = 'home'; // 'home', 'all_articles', 'all_flashes', 'single_article'
+    let selectedArticleId = null;
     let currentGalleryImages = [];
     let galleryIndex = 0;
-    let selectedArticleId = null;
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');
+    }
+
+    function formatIsraeliDateTime(timestamp) {
+      if (!timestamp) return '';
+      const date = new Date(timestamp);
+      return date.toLocaleString('he-IL', { 
+        timeZone: 'Asia/Jerusalem',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
     }
 
     window.toggleSearchBar = function() {
@@ -324,7 +337,13 @@
         authBtn.classList.remove('border-2', 'border-green-500');
         authBtn.title = 'התחברות / הרשמה';
       }
-      loadArticles();
+      
+      // If viewing a single article, re-render to update comment delete permissions
+      if (currentViewMode === 'single_article' && selectedArticleId) {
+        openArticle(selectedArticleId);
+      } else {
+        renderArticles();
+      }
       checkAds();
     });
 
@@ -355,6 +374,12 @@
       articlesData = [];
       snap.forEach(doc => articlesData.push({ id: doc.id, ...doc.data() }));
 
+      sortArticlesByPriority();
+      renderArticles();
+      renderCategories();
+    }
+
+    function sortArticlesByPriority() {
       const consent = localStorage.getItem('cookie_consent');
       const viewed = JSON.parse(localStorage.getItem('viewed_articles') || '[]');
 
@@ -369,35 +394,32 @@
       } else {
         articlesData.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       }
-
-      renderArticles(articlesData);
-      renderCategories();
     }
 
     window.resetView = function() {
       activeFilter = null;
       currentCategory = 'all';
-      viewingAllArticles = false;
+      currentViewMode = 'home';
       selectedArticleId = null;
       document.getElementById('filter-banner').classList.add('hidden');
-      renderArticles(articlesData);
+      renderArticles();
       renderCategories();
     };
 
-    window.showAllArticles = function() {
-      viewingAllArticles = true;
+    window.showAllArticlesPage = function() {
+      currentViewMode = 'all_articles';
       selectedArticleId = null;
-      renderArticles(articlesData);
+      renderArticles();
     };
 
-    window.showAllFlashes = function() {
-      viewingAllFlashes = true;
+    window.showAllFlashesPage = function() {
+      currentViewMode = 'all_flashes';
       renderFlashes();
     };
 
     window.filterBy = function(type, val) {
       activeFilter = { type, value: val };
-      viewingAllArticles = true;
+      currentViewMode = 'all_articles';
       selectedArticleId = null;
       
       const banner = document.getElementById('filter-banner');
@@ -408,39 +430,158 @@
       if (type === 'tag') filterText.innerText = `מציג כתבות מתגית: ${val}`;
       if (type === 'author') filterText.innerText = `מציג כתבות מאת הכתב: ${val}`;
 
-      renderArticles(articlesData);
+      renderArticles();
     };
 
-    window.openArticle = function(id) {
+    window.openArticle = async function(id) {
       selectedArticleId = id;
+      currentViewMode = 'single_article';
+      
       const viewed = JSON.parse(localStorage.getItem('viewed_articles') || '[]');
       if (!viewed.includes(id)) {
         viewed.push(id);
         localStorage.setItem('viewed_articles', JSON.stringify(viewed));
       }
-      renderArticles(articlesData);
+
+      const container = document.getElementById('articles-list');
+      const viewAllBtnContainer = document.getElementById('view-all-articles-container');
+      viewAllBtnContainer.classList.add('hidden');
+      container.innerHTML = `<p class="text-center text-slate-400 py-8">טוען כתבה...</p>`;
+
+      const docRef = doc(db, "articles", id);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        container.innerHTML = `<p class="text-center text-slate-400 py-8">הכתבה לא נמצאה.</p>`;
+        return;
+      }
+
+      const art = { id: docSnap.id, ...docSnap.data() };
+      let contentHtml = art.content || '';
+      contentHtml = contentHtml.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
+      
+      const inlineImages = [];
+      contentHtml = contentHtml.replace(/\[image:\s*(.*?)\]/g, (match, url) => {
+        inlineImages.push(url);
+        const idx = inlineImages.length - 1;
+        return `<img src="${url}" onclick="openLightbox(${JSON.stringify(inlineImages)}, ${idx})" 
+                     class="my-4 rounded-xl max-h-96 w-full object-cover cursor-pointer hover:opacity-95 transition protected-img" oncontextmenu="return false;">`;
+      });
+
+      const tagsHtml = (art.tags || []).map(t => 
+        `<button onclick="filterBy('tag', '${t}')" class="bg-slate-700 hover:bg-slate-600 text-slate-300 text-[11px] px-2.5 py-1 rounded transition">${t}</button>`
+      ).join(' ');
+
+      const categoryBtn = art.category ? `<button onclick="filterBy('category', '${art.category}')" class="bg-red-600/20 hover:bg-red-600/30 text-red-400 text-xs px-2.5 py-0.5 rounded-full font-semibold transition">${art.category}</button>` : '';
+      const authorDiv = art.author ? `<div class="mt-4 text-xs text-slate-400 font-medium cursor-pointer hover:text-red-400 transition" onclick="filterBy('author', '${art.author}')">מאת: ${art.author}</div>` : '';
+      const dateTimeStr = formatIsraeliDateTime(art.createdAt);
+
+      // Load Comments
+      const commentsSnap = await getDocs(collection(db, "articles", id, "comments"));
+      const comments = [];
+      commentsSnap.forEach(c => comments.push({ id: c.id, ...c.data() }));
+      comments.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+      let commentsHtml = '';
+      comments.forEach(c => {
+        const canDelete = currentUser && (currentUser.email === SUPER_ADMIN_EMAIL || currentUser.email === c.userEmail);
+        commentsHtml += `
+          <div class="bg-slate-900 p-3 rounded-xl border border-slate-700/60 flex justify-between items-start gap-2">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-bold text-xs text-red-400">${c.userName || c.userEmail}</span>
+                <span class="text-[10px] text-slate-500">${formatIsraeliDateTime(c.createdAt)}</span>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">${c.text}</p>
+            </div>
+            ${canDelete ? `<button onclick="deleteComment('${id}', '${c.id}')" class="text-red-500 hover:text-red-400 text-xs p-1" title="מחק תגובה"><i class="fa-solid fa-trash"></i></button>` : ''}
+          </div>
+        `;
+      });
+
+      container.innerHTML = `
+        <article class="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 shadow-md p-6 space-y-4">
+          <button onclick="resetView()" class="bg-slate-700 hover:bg-slate-600 text-xs text-slate-200 px-3 py-1.5 rounded-lg transition mb-2">
+            <i class="fa-solid fa-arrow-right ml-1"></i> חזרה לכל הכתבות
+          </button>
+          <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
+            <div class="flex items-center gap-2">${categoryBtn}</div>
+            <span class="text-xs text-slate-400"><i class="fa-regular fa-clock ml-1"></i> ${dateTimeStr}</span>
+          </div>
+          <h2 class="text-2xl font-extrabold text-slate-100">${art.title}</h2>
+          <p class="text-sm text-slate-300">${art.description || ''}</p>
+          ${art.imageUrl ? `<img src="${art.imageUrl}" class="w-full h-80 object-cover rounded-xl protected-img" oncontextmenu="return false;">` : ''}
+          <div class="text-sm text-slate-300 space-y-3 leading-relaxed border-t border-slate-700/50 pt-4">${contentHtml}</div>
+          <div class="nowrap-tags gap-1.5 pt-2">${tagsHtml}</div>
+          ${authorDiv}
+
+          <!-- Comments Section -->
+          <div class="border-t border-slate-700 pt-6 mt-6 space-y-4">
+            <h3 class="text-base font-bold text-slate-200 flex items-center gap-2">
+              <i class="fa-solid fa-comments text-red-500"></i> תגובות (${comments.length})
+            </h3>
+            
+            ${currentUser ? `
+              <form onsubmit="submitComment(event, '${id}')" class="space-y-3">
+                <textarea id="comment-text" required rows="2" placeholder="כתוב תגובה..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-100 focus:outline-none focus:border-red-500"></textarea>
+                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition">פרסם תגובה</button>
+              </form>
+            ` : `
+              <p class="text-xs text-slate-400 bg-slate-900/50 p-3 rounded-xl border border-slate-700">יש <button onclick="openAuthModal()" class="text-red-400 underline font-bold">להתחבר</button> כדי לכתוב תגובה.</p>
+            `}
+
+            <div class="space-y-3 mt-4">
+              ${comments.length === 0 ? `<p class="text-xs text-slate-400">אין תגובות עדיין. היה הראשונים להגיב!</p>` : commentsHtml}
+            </div>
+          </div>
+        </article>
+      `;
+
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    function renderArticles(list) {
+    window.submitComment = async function(e, articleId) {
+      e.preventDefault();
+      if (!currentUser) return;
+
+      const textInput = document.getElementById('comment-text');
+      const text = textInput.value.trim();
+      if (!text) return;
+
+      await addDoc(collection(db, "articles", articleId, "comments"), {
+        text,
+        userEmail: currentUser.email,
+        userName: currentUser.email.split('@')[0],
+        createdAt: Date.now()
+      });
+
+      textInput.value = '';
+      openArticle(articleId);
+    };
+
+    window.deleteComment = async function(articleId, commentId) {
+      if (!confirm("האם אתה בטוח שברצונך למחוק תגובה זו?")) return;
+      await deleteDoc(doc(db, "articles", articleId, "comments", commentId));
+      openArticle(articleId);
+    };
+
+    function renderArticles() {
       const container = document.getElementById('articles-list');
       const viewAllBtnContainer = document.getElementById('view-all-articles-container');
       container.innerHTML = '';
 
-      let filtered = list;
+      let filtered = articlesData;
 
-      if (selectedArticleId) {
-        filtered = list.filter(a => a.id === selectedArticleId);
-      } else if (activeFilter) {
+      if (activeFilter) {
         if (activeFilter.type === 'category') {
-          filtered = list.filter(a => a.category === activeFilter.value);
+          filtered = articlesData.filter(a => a.category === activeFilter.value);
         } else if (activeFilter.type === 'tag') {
-          filtered = list.filter(a => (a.tags || []).includes(activeFilter.value));
+          filtered = articlesData.filter(a => (a.tags || []).includes(activeFilter.value));
         } else if (activeFilter.type === 'author') {
-          filtered = list.filter(a => a.author === activeFilter.value);
+          filtered = articlesData.filter(a => a.author === activeFilter.value);
         }
       } else if (currentCategory !== 'all') {
-        filtered = list.filter(a => a.category === currentCategory);
+        filtered = articlesData.filter(a => a.category === currentCategory);
       }
 
       if (filtered.length === 0) {
@@ -450,7 +591,7 @@
       }
 
       let displayList = filtered;
-      if (!viewingAllArticles && !selectedArticleId && !activeFilter && currentCategory === 'all') {
+      if (currentViewMode === 'home' && !activeFilter && currentCategory === 'all') {
         displayList = filtered.slice(0, 5);
         if (filtered.length > 5) {
           viewAllBtnContainer.classList.remove('hidden');
@@ -462,65 +603,38 @@
       }
 
       displayList.forEach(art => {
-        const isFullView = (selectedArticleId === art.id);
-        let contentHtml = art.content || '';
-        contentHtml = contentHtml.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
-        
-        const inlineImages = [];
-        contentHtml = contentHtml.replace(/\[image:\s*(.*?)\]/g, (match, url) => {
-          inlineImages.push(url);
-          const idx = inlineImages.length - 1;
-          return `<img src="${url}" onclick="openLightbox(${JSON.stringify(inlineImages)}, ${idx})" 
-                       class="my-4 rounded-xl max-h-96 w-full object-cover cursor-pointer hover:opacity-95 transition protected-img" oncontextmenu="return false;">`;
-        });
-
-        // Tags formatted without # and in one nowrap scrollable row for mobile
         const tagsHtml = (art.tags || []).map(t => 
           `<button onclick="filterBy('tag', '${t}')" class="bg-slate-700 hover:bg-slate-600 text-slate-300 text-[11px] px-2.5 py-1 rounded transition">${t}</button>`
         ).join(' ');
 
         const categoryBtn = art.category ? `<button onclick="filterBy('category', '${art.category}')" class="bg-red-600/20 hover:bg-red-600/30 text-red-400 text-xs px-2.5 py-0.5 rounded-full font-semibold transition">${art.category}</button>` : '';
-        const authorDiv = art.author ? `<div class="mt-4 text-xs text-slate-400 font-medium cursor-pointer hover:text-red-400 transition" onclick="filterBy('author', '${art.author}')">מאת: ${art.author}</div>` : '';
+        const authorDiv = art.author ? `<div class="text-xs text-slate-400 font-medium cursor-pointer hover:text-red-400 transition" onclick="filterBy('author', '${art.author}')">מאת: ${art.author}</div>` : '';
+        const dateTimeStr = formatIsraeliDateTime(art.createdAt);
 
-        if (isFullView) {
-          container.innerHTML += `
-            <article class="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 shadow-md p-6 space-y-4">
-              <button onclick="resetView()" class="bg-slate-700 hover:bg-slate-600 text-xs text-slate-200 px-3 py-1.5 rounded-lg transition mb-2">
-                <i class="fa-solid fa-arrow-right ml-1"></i> חזרה לכל הכתבות
-              </button>
-              <div class="flex items-center gap-2 mb-2 flex-wrap">
-                ${categoryBtn}
-              </div>
-              <h2 class="text-2xl font-extrabold text-slate-100">${art.title}</h2>
-              <p class="text-sm text-slate-300">${art.description || ''}</p>
-              ${art.imageUrl ? `<img src="${art.imageUrl}" class="w-full h-80 object-cover rounded-xl protected-img" oncontextmenu="return false;">` : ''}
-              <div class="text-sm text-slate-300 space-y-3 leading-relaxed border-t border-slate-700/50 pt-4">${contentHtml}</div>
-              <div class="nowrap-tags gap-1.5 pt-2">${tagsHtml}</div>
-              ${authorDiv}
-            </article>
-          `;
-        } else {
-          container.innerHTML += `
-            <article class="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 shadow-md flex flex-col md:flex-row">
-              ${art.imageUrl ? `<img src="${art.imageUrl}" class="w-full md:w-56 h-48 md:h-auto object-cover protected-img cursor-pointer" onclick="openArticle('${art.id}')" oncontextmenu="return false;">` : ''}
-              <div class="p-5 flex flex-col justify-between flex-grow">
-                <div>
-                  <div class="flex items-center gap-2 mb-2">
-                    ${categoryBtn}
-                  </div>
-                  <h2 class="text-lg font-extrabold mb-2 text-slate-100 cursor-pointer hover:text-red-400 transition" onclick="openArticle('${art.id}')">${art.title}</h2>
-                  <p class="text-xs text-slate-400 line-clamp-2">${art.description || ''}</p>
+        container.innerHTML += `
+          <article class="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 shadow-md flex flex-col md:flex-row">
+            ${art.imageUrl ? `<img src="${art.imageUrl}" class="w-full md:w-56 h-48 md:h-auto object-cover protected-img cursor-pointer" onclick="openArticle('${art.id}')" oncontextmenu="return false;">` : ''}
+            <div class="p-5 flex flex-col justify-between flex-grow">
+              <div>
+                <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                  ${categoryBtn}
+                  <span class="text-[11px] text-slate-400"><i class="fa-regular fa-clock ml-1"></i> ${dateTimeStr}</span>
                 </div>
-                <div class="mt-4 pt-3 border-t border-slate-700/50 flex items-center justify-between flex-wrap gap-2">
-                  <div class="nowrap-tags gap-1.5 max-w-[200px] md:max-w-xs">${tagsHtml}</div>
+                <h2 class="text-lg font-extrabold mb-2 text-slate-100 cursor-pointer hover:text-red-400 transition" onclick="openArticle('${art.id}')">${art.title}</h2>
+                <p class="text-xs text-slate-400 line-clamp-2">${art.description || ''}</p>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-700/50 flex items-center justify-between flex-wrap gap-2">
+                <div class="nowrap-tags gap-1.5 max-w-[200px] md:max-w-xs">${tagsHtml}</div>
+                <div class="flex items-center gap-3">
+                  ${authorDiv}
                   <button onclick="openArticle('${art.id}')" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition">
                     לקריאת הכתבה <i class="fa-solid fa-arrow-left mr-1"></i>
                   </button>
                 </div>
               </div>
-            </article>
-          `;
-        }
+            </div>
+          </article>
+        `;
       });
     }
 
@@ -528,7 +642,7 @@
       const bar = document.getElementById('categories-bar');
       const cats = ['all', ...new Set(articlesData.map(a => a.category).filter(Boolean))];
       bar.innerHTML = cats.map(c => `
-        <button onclick="setCategory('${c}')" class="px-4 py-1.5 rounded-full whitespace-nowrap transition ${currentCategory === c && !activeFilter ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">
+        <button onclick="setCategory('${c}')" class="px-4 py-1.5 rounded-full whitespace-nowrap transition ${currentCategory === c && !activeFilter && currentViewMode === 'home' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">
           ${c === 'all' ? 'כל הכתבות' : c}
         </button>
       `).join('');
@@ -538,20 +652,20 @@
       activeFilter = null;
       selectedArticleId = null;
       currentCategory = cat;
-      viewingAllArticles = false;
+      currentViewMode = 'home';
       document.getElementById('filter-banner').classList.add('hidden');
-      renderArticles(articlesData);
+      renderArticles();
       renderCategories();
     };
 
     window.handleSearch = function() {
       const q = document.getElementById('search-input').value.trim().toLowerCase();
       if (!q) {
-        renderArticles(articlesData);
+        renderArticles();
         return;
       }
 
-      viewingAllArticles = true;
+      currentViewMode = 'all_articles';
       selectedArticleId = null;
       activeFilter = null;
       document.getElementById('filter-banner').classList.add('hidden');
@@ -574,7 +688,50 @@
                item.content?.toLowerCase().includes(q);
       });
 
-      renderArticles(results);
+      const container = document.getElementById('articles-list');
+      const viewAllBtnContainer = document.getElementById('view-all-articles-container');
+      viewAllBtnContainer.classList.add('hidden');
+      container.innerHTML = '';
+
+      if (results.length === 0) {
+        container.innerHTML = `<p class="text-center text-slate-400 py-8">אין תוצאות חיפוש.</p>`;
+        return;
+      }
+
+      results.forEach(art => {
+        const tagsHtml = (art.tags || []).map(t => 
+          `<button onclick="filterBy('tag', '${t}')" class="bg-slate-700 hover:bg-slate-600 text-slate-300 text-[11px] px-2.5 py-1 rounded transition">${t}</button>`
+        ).join(' ');
+
+        const categoryBtn = art.category ? `<button onclick="filterBy('category', '${art.category}')" class="bg-red-600/20 hover:bg-red-600/30 text-red-400 text-xs px-2.5 py-0.5 rounded-full font-semibold transition">${art.category}</button>` : '';
+        const authorDiv = art.author ? `<div class="text-xs text-slate-400 font-medium cursor-pointer hover:text-red-400 transition" onclick="filterBy('author', '${art.author}')">מאת: ${art.author}</div>` : '';
+        const dateTimeStr = formatIsraeliDateTime(art.createdAt);
+
+        container.innerHTML += `
+          <article class="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 shadow-md flex flex-col md:flex-row">
+            ${art.imageUrl ? `<img src="${art.imageUrl}" class="w-full md:w-56 h-48 md:h-auto object-cover protected-img cursor-pointer" onclick="openArticle('${art.id}')" oncontextmenu="return false;">` : ''}
+            <div class="p-5 flex flex-col justify-between flex-grow">
+              <div>
+                <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                  ${categoryBtn}
+                  <span class="text-[11px] text-slate-400"><i class="fa-regular fa-clock ml-1"></i> ${dateTimeStr}</span>
+                </div>
+                <h2 class="text-lg font-extrabold mb-2 text-slate-100 cursor-pointer hover:text-red-400 transition" onclick="openArticle('${art.id}')">${art.title}</h2>
+                <p class="text-xs text-slate-400 line-clamp-2">${art.description || ''}</p>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-700/50 flex items-center justify-between flex-wrap gap-2">
+                <div class="nowrap-tags gap-1.5 max-w-[200px] md:max-w-xs">${tagsHtml}</div>
+                <div class="flex items-center gap-3">
+                  ${authorDiv}
+                  <button onclick="openArticle('${art.id}')" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition">
+                    לקריאת הכתבה <i class="fa-solid fa-arrow-left mr-1"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      });
     };
 
     async function loadFlashes() {
@@ -583,6 +740,7 @@
       snap.forEach(docSnap => {
         flashesData.push({ id: docSnap.id, ...docSnap.data() });
       });
+      flashesData.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       renderFlashes();
     }
 
@@ -598,7 +756,7 @@
       }
 
       let displayFlashes = flashesData;
-      if (!viewingAllFlashes) {
+      if (currentViewMode !== 'all_flashes') {
         displayFlashes = flashesData.slice(0, 5);
         if (flashesData.length > 5) {
           viewAllFlashesBtn.classList.remove('hidden');
@@ -607,13 +765,23 @@
         }
       } else {
         viewAllFlashesBtn.classList.add('hidden');
+        // Add a back button if viewing all flashes
+        container.innerHTML += `
+          <button onclick="resetView()" class="bg-slate-700 hover:bg-slate-600 text-xs text-slate-200 px-3 py-1.5 rounded-lg transition mb-3">
+            <i class="fa-solid fa-arrow-right ml-1"></i> חזרה לדף הבית
+          </button>
+        `;
       }
 
       displayFlashes.forEach(f => {
+        const dateTimeStr = formatIsraeliDateTime(f.createdAt);
         container.innerHTML += `
           <div class="border-b border-slate-700/60 pb-2">
             <button onclick="toggleAccordion('${f.id}')" class="w-full text-right text-xs font-bold text-slate-200 hover:text-red-400 flex justify-between items-center py-1">
-              <span>${f.title}</span>
+              <span class="flex items-center gap-2">
+                ${f.title}
+                <span class="text-[10px] text-slate-500 font-normal">(${dateTimeStr})</span>
+              </span>
               <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
             </button>
             <div id="acc-${f.id}" class="accordion-content text-xs text-slate-400 pt-1">
