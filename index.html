@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>חדשות ראשונות - המקום הנכון לחדשות אמינות</title>
+  <meta name="description" content="חדשות ראשונות - אתר החדשות והאקטואליה המוביל. מבזקים בזמן אמת, דיווחים שוטפים, פוליטיקה, ביטחון, צבא וכל מה שקורה בישראל ובעולם.">
+  <meta name="keywords" content="חדשות, חדשות ראשונות, מבזקים, אקטואליה, ביטחון, פוליטיקה, חדשות בזמן אמת, דיווחים שוטפים">
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e293b">
+  <link rel="icon" type="image/png" href="https://i.ibb.co/4ZhnSV1Q/cropped-circle-1.png">
+
+  <!-- Tailwind CSS & Font Awesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Rubik', sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+    }
+    .protected-img {
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: auto;
+    }
+    .highlight {
+      background-color: #f59e0b;
+      color: #000;
+      padding: 0 4px;
+      border-radius: 2px;
+    }
+    /* Accordion animation */
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col pb-16 md:pb-0">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 bg-slate-800/95 backdrop-blur border-b border-slate-700 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <img src="https://i.ibb.co/4ZhnSV1Q/cropped-circle-1.png" alt="לוגו חדשות ראשונות" 
+             class="w-12 h-12 rounded-full border-2 border-red-600 protected-img" oncontextmenu="return false;">
+        <div>
+          <h1 class="text-xl font-black text-red-500 tracking-wide">חדשות ראשונות</h1>
+          <p class="text-xs text-slate-400">המקום הנכון לחדשות אמינות</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button id="auth-btn" onclick="openAuthModal()" class="bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2">
+          <i class="fa-solid fa-user"></i> <span id="auth-btn-text">התחברות / הרשמה</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full grid grid-cols-1 lg:grid-cols-4 gap-6">
+    
+    <!-- Left/Center Main Column: Search, Articles & Contact -->
+    <section class="lg:col-span-3 space-y-6">
+      
+      <!-- Search Bar -->
+      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-md">
+        <div class="relative">
+          <input type="text" id="search-input" onkeyup="handleSearch()" placeholder="חיפוש כתבות לפי שם, קטגוריה, תגיות, כתב או תוכן..." 
+                 class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 pr-10 text-sm focus:outline-none focus:border-red-500">
+          <i class="fa-solid fa-magnifying-glass absolute right-3 top-3.5 text-slate-400"></i>
+        </div>
+      </div>
+
+      <!-- Categories Navigation -->
+      <div id="categories-bar" class="flex gap-2 overflow-x-auto pb-2 scrollbar-none text-sm font-medium">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Articles Container -->
+      <div id="articles-list" class="space-y-6">
+        <p class="text-center text-slate-400 py-10">טוען כתבות...</p>
+      </div>
+
+      <!-- Contact Form Section -->
+      <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 mt-12">
+        <h2 class="text-xl font-bold mb-4 text-red-400 flex items-center gap-2">
+          <i class="fa-solid fa-envelope"></i> צור קשר עם המערכת
+        </h2>
+        <form id="contact-form" onsubmit="submitContact(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold mb-1">שם מלא (שדה חובה)</label>
+            <input type="text" id="c-name" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold mb-1">פלאפון (רשות)</label>
+              <input type="tel" id="c-phone" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">אימייל (רשות)</label>
+              <input type="email" id="c-email" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">העלה קבצים (עד 3 תמונות - רשות)</label>
+            <input type="file" id="c-files" multiple accept="image/*" class="w-full text-xs text-slate-400 bg-slate-900 p-2 rounded-lg border border-slate-700">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">תוכן ההודעה (לפחות 5 אותיות - שדה חובה)</label>
+            <textarea id="c-msg" required rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm"></textarea>
+          </div>
+          <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-6 rounded-lg text-sm transition">
+            שלח פנייה למערכת
+          </button>
+        </form>
+      </div>
+
+    </section>
+
+    <!-- Right Sidebar: Flashes & Telegram Track -->
+    <aside class="space-y-6">
+      
+      <!-- Flashes Section -->
+      <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-md">
+        <h2 class="text-lg font-black text-red-500 mb-4 border-b border-slate-700 pb-2 flex items-center gap-2">
+          <i class="fa-solid fa-bolt text-amber-400"></i> מבזקים שוטפים
+        </h2>
+        <div id="flashes-list" class="space-y-3">
+          <p class="text-xs text-slate-400">טוען מבזקים...</p>
+        </div>
+      </div>
+
+      <!-- Telegram Join Box -->
+      <div class="bg-gradient-to-br from-blue-900 to-slate-800 p-5 rounded-2xl border border-blue-700/50 text-center">
+        <i class="fa-brands fa-telegram text-4xl text-blue-400 mb-2"></i>
+        <h3 class="font-bold text-base mb-1">הערוץ הרשמי בטלגרם</h3>
+        <p class="text-xs text-slate-300 mb-4">הצטרפו לערוץ הדיווחים השוטפים וקבלו מבזקים בזמן אמת</p>
+        <a href="https://t.me/hadshot_roshonot" target="_blank" 
+           class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs py-2.5 px-5 rounded-xl transition shadow-lg">
+          עקבו אחרינו בטלגרם <i class="fa-solid fa-arrow-left mr-1"></i>
+        </a>
+      </div>
+
+    </aside>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-800 border-t border-slate-700 mt-12 py-8">
+    <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div>
+        <h4 class="font-bold text-red-500 mb-2">חדשות ראשונות</h4>
+        <p class="text-xs text-slate-400 leading-relaxed">אתר החדשות הבלתי תלוי. כל הדיווחים, המבזקים, והאירועים שקורים עכשיו בישראל ובעולם בזמן אמת.</p>
+      </div>
+      <div>
+        <h4 class="font-bold text-slate-200 mb-2 text-sm">הרשמה לניוזלטר</h4>
+        <form id="newsletter-form" onsubmit="submitNewsletter(event)" class="flex gap-2">
+          <input type="text" id="nl-name" placeholder="שם מלא" required class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-3 py-2 w-1/3">
+          <input type="email" id="nl-email" placeholder="אימייל" required class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-3 py-2 w-1/2">
+          <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 rounded-lg">הרשם</button>
+        </form>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Lightbox Gallery Modal for Articles -->
+  <div id="lightbox-modal" class="fixed inset-0 z-50 bg-black/90 hidden flex flex-col justify-between p-4">
+    <div class="flex justify-between items-center text-white">
+      <span id="lb-counter" class="text-xs font-mono bg-slate-800 px-3 py-1 rounded-full">(תמונה 1 מתוך 1)</span>
+      <button onclick="closeLightbox()" class="text-2xl text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="flex-grow flex items-center justify-between px-2">
+      <button onclick="prevLightboxImage()" class="text-3xl text-slate-400 hover:text-white p-2"><i class="fa-solid fa-chevron-right"></i></button>
+      <img id="lb-image" src="" class="max-h-[75vh] max-w-[90vw] object-contain rounded-lg protected-img" oncontextmenu="return false;">
+      <button onclick="nextLightboxImage()" class="text-3xl text-slate-400 hover:text-white p-2"><i class="fa-solid fa-chevron-left"></i></button>
+    </div>
+    <div class="text-center text-xs text-slate-500 py-2">חדשות ראשונות</div>
+  </div>
+
+  <!-- Ad Modal (Pop-up) -->
+  <div id="ad-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-3 max-w-lg w-full relative shadow-2xl">
+      <button onclick="closeAdModal()" class="absolute -top-3 -right-3 bg-red-600 hover:bg-red-700 text-white w-8 h-8 rounded-full font-bold flex items-center justify-center shadow-lg">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <a id="ad-link" href="#" target="_blank">
+        <img id="ad-img" src="" class="w-full h-auto rounded-xl max-h-[70vh] object-cover">
+      </a>
+    </div>
+  </div>
+
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="fixed inset-0 z-50 bg-black/80 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full relative">
+      <button onclick="closeAuthModal()" class="absolute top-4 left-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      <h3 id="auth-title" class="text-lg font-bold mb-4">התחברות / הרשמה</h3>
+      <form id="auth-form" onsubmit="handleAuth(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs mb-1">אימייל</label>
+          <input type="email" id="auth-email" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs mb-1">סיסמה</label>
+          <input type="password" id="auth-pass" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm">
+        </div>
+        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg text-sm">אישור</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Cookie Banner -->
+  <div id="cookie-banner" class="fixed bottom-0 inset-x-0 bg-slate-800 border-t border-slate-700 p-4 z-40 hidden flex-col md:flex-row items-center justify-between gap-4 shadow-2xl">
+    <p class="text-xs text-slate-300">
+      אנו משתמשים בקובצי עוגיות (Cookies) כדי להציע לך כתבות וידיעות מבוססות תחומי עניין.
+    </p>
+    <div class="flex gap-3">
+      <button onclick="acceptCookies(true)" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2 rounded-lg">אישור</button>
+      <button onclick="acceptCookies(false)" class="bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-bold px-4 py-2 rounded-lg">דחייה</button>
+    </div>
+  </div>
+
+  <!-- Firebase Integration -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCSIm0TdB3rNGg_8FFIoyNx5YQ-CGsLWDE",
+      authDomain: "hadshot-roshonot.firebaseapp.com",
+      projectId: "hadshot-roshonot",
+      storageBucket: "hadshot-roshonot.firebasestorage.app",
+      messagingSenderId: "444940332622",
+      appId: "1:444940332622:web:30071d5fc84590fca89d1f",
+      measurementId: "G-5G0R7MVSN1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const BOT_TOKEN = "8653137296:AAEcyuGw0896waV2NjQm9_1Og6BQD776IR8";
+    let currentUser = null;
+    let articlesData = [];
+    let currentCategory = 'all';
+    let currentGalleryImages = [];
+    let galleryIndex = 0;
+
+    // PWA Register
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+
+    // Cookie & Preferences
+    window.acceptCookies = function(allow) {
+      localStorage.setItem('cookie_consent', allow ? 'accepted' : 'rejected');
+      document.getElementById('cookie-banner').classList.add('hidden');
+      loadArticles();
+    };
+
+    if (!localStorage.getItem('cookie_consent')) {
+      document.getElementById('cookie-banner').classList.remove('hidden');
+    }
+
+    // Auth Change
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user;
+      const btnText = document.getElementById('auth-btn-text');
+      if (user) {
+        btnText.innerText = user.email;
+      } else {
+        btnText.innerText = 'התחברות / הרשמה';
+      }
+      loadArticles();
+      checkAds();
+    });
+
+    // Send to Telegram subscribers (/311)
+    async function sendTelegramNotification(text, files = []) {
+      try {
+        const subSnap = await getDocs(collection(db, "telegram_subscribers"));
+        subSnap.forEach(async (docSnap) => {
+          const chatId = docSnap.data().chat_id;
+          
+          // Send Text
+          await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'HTML' })
+          });
+
+          // Send Files directly
+          for (let file of files) {
+            const formData = new FormData();
+            formData.append('chat_id', chatId);
+            formData.append('photo', file);
+            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+              method: 'POST',
+              body: formData
+            });
+          }
+        });
+      } catch (e) {
+        console.error("Telegram Send Error", e);
+      }
+    }
+
+    // Load Articles & Recommendation Engine
+    async function loadArticles() {
+      const snap = await getDocs(collection(db, "articles"));
+      articlesData = [];
+      snap.forEach(doc => articlesData.push({ id: doc.id, ...doc.data() }));
+
+      const consent = localStorage.getItem('cookie_consent');
+      const viewed = JSON.parse(localStorage.getItem('viewed_articles') || '[]');
+
+      if (consent === 'accepted') {
+        // Advanced Recommendation Sorting
+        articlesData.sort((a, b) => {
+          const aViewed = viewed.includes(a.id);
+          const bViewed = viewed.includes(b.id);
+          if (!aViewed && bViewed) return -1;
+          if (aViewed && !bViewed) return 1;
+          return (b.createdAt || 0) - (a.createdAt || 0);
+        });
+      } else {
+        // Default Sorting
+        articlesData.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      }
+
+      renderArticles(articlesData);
+      renderCategories();
+    }
+
+    function renderArticles(list) {
+      const container = document.getElementById('articles-list');
+      container.innerHTML = '';
+
+      const filtered = currentCategory === 'all' 
+        ? list 
+        : list.filter(a => a.category === currentCategory);
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<p class="text-center text-slate-400 py-8">אין כתבות להצגה.</p>`;
+        return;
+      }
+
+      filtered.forEach(art => {
+        // Parse markdown bold and inline images
+        let contentHtml = art.content || '';
+        contentHtml = contentHtml.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
+        
+        // Extract embedded images for lightbox
+        const inlineImages = [];
+        contentHtml = contentHtml.replace(/\[image:\s*(.*?)\]/g, (match, url) => {
+          inlineImages.push(url);
+          const idx = inlineImages.length - 1;
+          return `<img src="${url}" onclick="openLightbox(${JSON.stringify(inlineImages)}, ${idx})" 
+                       class="my-4 rounded-xl max-h-96 w-full object-cover cursor-pointer hover:opacity-95 transition protected-img" oncontextmenu="return false;">`;
+        });
+
+        const tagsHtml = (art.tags || []).slice(0, 5).map(t => `<span class="bg-slate-700 text-slate-300 text-[10px] px-2 py-0.5 rounded">#${t}</span>`).join(' ');
+
+        container.innerHTML += `
+          <article class="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 shadow-md">
+            ${art.imageUrl ? `<img src="${art.imageUrl}" class="w-full h-64 object-cover protected-img" oncontextmenu="return false;">` : ''}
+            <div class="p-6">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="bg-red-600/20 text-red-400 text-xs px-2.5 py-0.5 rounded-full font-semibold">${art.category || 'כללי'}</span>
+                ${tagsHtml}
+              </div>
+              <h2 class="text-xl font-extrabold mb-2 text-slate-100">${art.title}</h2>
+              <p class="text-xs text-slate-400 mb-4">${art.description || ''}</p>
+              <div class="text-sm text-slate-300 space-y-2 leading-relaxed border-t border-slate-700/50 pt-4">${contentHtml}</div>
+              ${art.author ? `<div class="mt-4 text-xs text-slate-500 font-medium">מאת: ${art.author}</div>` : ''}
+            </div>
+          </article>
+        `;
+      });
+    }
+
+    function renderCategories() {
+      const bar = document.getElementById('categories-bar');
+      const cats = ['all', ...new Set(articlesData.map(a => a.category).filter(Boolean))];
+      bar.innerHTML = cats.map(c => `
+        <button onclick="setCategory('${c}')" class="px-4 py-1.5 rounded-full whitespace-nowrap transition ${currentCategory === c ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">
+          ${c === 'all' ? 'כל הכתבות' : c}
+        </button>
+      `).join('');
+    }
+
+    window.setCategory = function(cat) {
+      currentCategory = cat;
+      renderArticles(articlesData);
+      renderCategories();
+    };
+
+    // Hierarchical Search
+    window.handleSearch = function() {
+      const q = document.getElementById('search-input').value.trim().toLowerCase();
+      if (!q) {
+        renderArticles(articlesData);
+        return;
+      }
+
+      // Priority sort
+      const results = [...articlesData].sort((a, b) => {
+        const getScore = (item) => {
+          if (item.title?.toLowerCase().includes(q)) return 5;
+          if (item.category?.toLowerCase().includes(q)) return 4;
+          if ((item.tags || []).some(t => t.toLowerCase().includes(q))) return 3;
+          if (item.author?.toLowerCase().includes(q)) return 2;
+          if (item.content?.toLowerCase().includes(q)) return 1;
+          return 0;
+        };
+        return getScore(b) - getScore(a);
+      }).filter(item => {
+        return item.title?.toLowerCase().includes(q) ||
+               item.category?.toLowerCase().includes(q) ||
+               (item.tags || []).some(t => t.toLowerCase().includes(q)) ||
+               item.author?.toLowerCase().includes(q) ||
+               item.content?.toLowerCase().includes(q);
+      });
+
+      renderArticles(results);
+    };
+
+    // Flashes accordion
+    async function loadFlashes() {
+      const snap = await getDocs(collection(db, "flashes"));
+      const container = document.getElementById('flashes-list');
+      container.innerHTML = '';
+      
+      snap.forEach(docSnap => {
+        const f = docSnap.data();
+        container.innerHTML += `
+          <div class="border-b border-slate-700/60 pb-2">
+            <button onclick="toggleAccordion('${docSnap.id}')" class="w-full text-right text-xs font-bold text-slate-200 hover:text-red-400 flex justify-between items-center py-1">
+              <span>${f.title}</span>
+              <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+            </button>
+            <div id="acc-${docSnap.id}" class="accordion-content text-xs text-slate-400 pt-1">
+              ${f.text}
+              ${f.author ? `<div class="mt-1 text-[10px] text-slate-500">${f.author}</div>` : ''}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    window.toggleAccordion = function(id) {
+      const el = document.getElementById(`acc-${id}`);
+      if (el.style.maxHeight) {
+        el.style.maxHeight = null;
+      } else {
+        el.style.maxHeight = el.scrollHeight + "px";
+      }
+    };
+
+    // Contact Submit
+    window.submitContact = async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('c-name').value;
+      const phone = document.getElementById('c-phone').value;
+      const email = document.getElementById('c-email').value;
+      const msg = document.getElementById('c-msg').value;
+      const files = document.getElementById('c-files').files;
+
+      if (msg.length < 5) {
+        alert("תוכן ההודעה חייב להכיל לפחות 5 אותיות");
+        return;
+      }
+
+      const text = `📬 <b>פנייה חדשה מצור קשר</b>\n<b>שם:</b> ${name}\n<b>טלפון:</b> ${phone || 'לא צוין'}\n<b>אימייל:</b> ${email || 'לא צוין'}\n<b>הודעה:</b>\n${msg}`;
+      
+      await sendTelegramNotification(text, Array.from(files).slice(0, 3));
+      alert("פנייתך נשלחה בהצלחה!");
+      document.getElementById('contact-form').reset();
+    };
+
+    // Newsletter Submit
+    window.submitNewsletter = async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('nl-name').value;
+      const email = document.getElementById('nl-email').value;
+
+      await addDoc(collection(db, "newsletter"), { name, email, createdAt: Date.now() });
+      await sendTelegramNotification(`📰 <b>הרשמה חדשה לניוזלטר</b>\n<b>שם:</b> ${name}\n<b>אימייל:</b> ${email}`);
+      alert("נרשמת בהצלחה לניוזלטר!");
+      document.getElementById('newsletter-form').reset();
+    };
+
+    // Lightbox Modal
+    window.openLightbox = function(imgs, idx) {
+      currentGalleryImages = imgs;
+      galleryIndex = idx;
+      updateLightbox();
+      document.getElementById('lightbox-modal').classList.remove('hidden');
+    };
+
+    window.closeLightbox = function() {
+      document.getElementById('lightbox-modal').classList.add('hidden');
+    };
+
+    window.nextLightboxImage = function() {
+      if (galleryIndex > 0) galleryIndex--;
+      updateLightbox();
+    };
+
+    window.prevLightboxImage = function() {
+      if (galleryIndex < currentGalleryImages.length - 1) galleryIndex++;
+      updateLightbox();
+    };
+
+    function updateLightbox() {
+      document.getElementById('lb-image').src = currentGalleryImages[galleryIndex];
+      document.getElementById('lb-counter').innerText = `(תמונה ${galleryIndex + 1} מתוך ${currentGalleryImages.length})`;
+    }
+
+    // Ads Control Engine
+    async function checkAds() {
+      if (currentUser) return; // Do not show ads to logged-in admins
+      
+      const adsSnap = await getDocs(collection(db, "ads"));
+      const ads = [];
+      adsSnap.forEach(d => ads.push({ id: d.id, ...d.data() }));
+
+      if (ads.length === 0) return;
+
+      const userViews = parseInt(localStorage.getItem('ad_views') || '0');
+      const selectedAd = ads[0]; // Pick active ad
+
+      if (selectedAd.maxUserViews && userViews >= selectedAd.maxUserViews) return;
+
+      document.getElementById('ad-img').src = selectedAd.imageUrl;
+      document.getElementById('ad-link').href = selectedAd.linkUrl || '#';
+      document.getElementById('ad-modal').classList.remove('hidden');
+
+      localStorage.setItem('ad_views', (userViews + 1).toString());
+    }
+
+    window.closeAdModal = function() {
+      document.getElementById('ad-modal').classList.add('hidden');
+    };
+
+    // Auth Modal Helpers
+    window.openAuthModal = function() {
+      document.getElementById('auth-modal').classList.remove('hidden');
+    };
+    window.closeAuthModal = function() {
+      document.getElementById('auth-modal').classList.add('hidden');
+    };
+
+    window.handleAuth = async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('auth-email').value;
+      const pass = document.getElementById('auth-pass').value;
+
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+        closeAuthModal();
+      } catch (err) {
+        try {
+          await createUserWithEmailAndPassword(auth, email, pass);
+          await sendTelegramNotification(`👤 <b>משתמש חדש נרשם לאתר:</b> ${email}`);
+          closeAuthModal();
+        } catch (e2) {
+          alert("שגיאה בהתחברות/הרשמה: " + e2.message);
+        }
+      }
+    };
+
+    // Initial Load
+    loadFlashes();
+    loadArticles();
+  </script>
+</body>
+</html>
