@@ -27,13 +27,6 @@
       -webkit-user-drag: none;
       pointer-events: auto;
     }
-    .highlight {
-      background-color: #f59e0b;
-      color: #000;
-      padding: 0 4px;
-      border-radius: 2px;
-    }
-    /* Accordion animation */
     .accordion-content {
       max-height: 0;
       overflow: hidden;
@@ -55,10 +48,26 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-3">
-        <button id="auth-btn" onclick="openAuthModal()" class="bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2">
-          <i class="fa-solid fa-user"></i> <span id="auth-btn-text">התחברות / הרשמה</span>
+      <!-- Action Buttons (Icons Only) -->
+      <div class="flex items-center gap-2">
+        <!-- Toggle Search Button -->
+        <button onclick="toggleSearchBar()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 w-10 h-10 rounded-xl flex items-center justify-center transition shadow">
+          <i class="fa-solid fa-magnifying-glass"></i>
         </button>
+
+        <!-- Auth Button (Icon Only) -->
+        <button id="auth-btn" onclick="openAuthModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 w-10 h-10 rounded-xl flex items-center justify-center transition shadow" title="התחברות / הרשמה">
+          <i class="fa-solid fa-user"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Hidden Expandable Search Bar -->
+    <div id="search-bar-container" class="hidden border-t border-slate-700/60 bg-slate-800/90 p-3">
+      <div class="max-w-7xl mx-auto relative">
+        <input type="text" id="search-input" onkeyup="handleSearch()" placeholder="חיפוש כתבות לפי שם, קטגוריה, תגיות, כתב או תוכן..." 
+               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 pr-10 text-sm focus:outline-none focus:border-red-500">
+        <i class="fa-solid fa-magnifying-glass absolute right-3 top-3 text-slate-400"></i>
       </div>
     </div>
   </header>
@@ -66,18 +75,9 @@
   <!-- Main Layout -->
   <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full grid grid-cols-1 lg:grid-cols-4 gap-6">
     
-    <!-- Left/Center Main Column: Search, Articles & Contact -->
+    <!-- Left/Center Main Column: Articles & Contact -->
     <section class="lg:col-span-3 space-y-6">
       
-      <!-- Search Bar -->
-      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-md">
-        <div class="relative">
-          <input type="text" id="search-input" onkeyup="handleSearch()" placeholder="חיפוש כתבות לפי שם, קטגוריה, תגיות, כתב או תוכן..." 
-                 class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 pr-10 text-sm focus:outline-none focus:border-red-500">
-          <i class="fa-solid fa-magnifying-glass absolute right-3 top-3.5 text-slate-400"></i>
-        </div>
-      </div>
-
       <!-- Categories Navigation -->
       <div id="categories-bar" class="flex gap-2 overflow-x-auto pb-2 scrollbar-none text-sm font-medium">
         <!-- Rendered dynamically -->
@@ -95,25 +95,25 @@
         </h2>
         <form id="contact-form" onsubmit="submitContact(event)" class="space-y-4">
           <div>
-            <label class="block text-xs font-semibold mb-1">שם מלא (שדה חובה)</label>
+            <label class="block text-xs font-semibold mb-1">שם מלא*</label>
             <input type="text" id="c-name" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-semibold mb-1">פלאפון (רשות)</label>
+              <label class="block text-xs font-semibold mb-1">פלאפון</label>
               <input type="tel" id="c-phone" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
             </div>
             <div>
-              <label class="block text-xs font-semibold mb-1">אימייל (רשות)</label>
+              <label class="block text-xs font-semibold mb-1">אימייל)</label>
               <input type="email" id="c-email" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
             </div>
           </div>
           <div>
-            <label class="block text-xs font-semibold mb-1">העלה קבצים (עד 3 תמונות - רשות)</label>
+            <label class="block text-xs font-semibold mb-1">העלה קבצים</label>
             <input type="file" id="c-files" multiple accept="image/*" class="w-full text-xs text-slate-400 bg-slate-900 p-2 rounded-lg border border-slate-700">
           </div>
           <div>
-            <label class="block text-xs font-semibold mb-1">תוכן ההודעה (לפחות 5 אותיות - שדה חובה)</label>
+            <label class="block text-xs font-semibold mb-1">תוכן ההודעה*</label>
             <textarea id="c-msg" required rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm"></textarea>
           </div>
           <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-6 rounded-lg text-sm transition">
@@ -229,8 +229,8 @@
   <!-- Firebase Integration -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSIm0TdB3rNGg_8FFIoyNx5YQ-CGsLWDE",
@@ -253,12 +253,19 @@
     let currentGalleryImages = [];
     let galleryIndex = 0;
 
-    // PWA Register
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');
     }
 
-    // Cookie & Preferences
+    // Toggle Search Bar Display
+    window.toggleSearchBar = function() {
+      const bar = document.getElementById('search-bar-container');
+      bar.classList.toggle('hidden');
+      if (!bar.classList.contains('hidden')) {
+        document.getElementById('search-input').focus();
+      }
+    };
+
     window.acceptCookies = function(allow) {
       localStorage.setItem('cookie_consent', allow ? 'accepted' : 'rejected');
       document.getElementById('cookie-banner').classList.add('hidden');
@@ -269,34 +276,31 @@
       document.getElementById('cookie-banner').classList.remove('hidden');
     }
 
-    // Auth Change
     onAuthStateChanged(auth, (user) => {
       currentUser = user;
-      const btnText = document.getElementById('auth-btn-text');
+      const authBtn = document.getElementById('auth-btn');
       if (user) {
-        btnText.innerText = user.email;
+        authBtn.classList.add('border-2', 'border-green-500');
+        authBtn.title = `מחובר כ: ${user.email}`;
       } else {
-        btnText.innerText = 'התחברות / הרשמה';
+        authBtn.classList.remove('border-2', 'border-green-500');
+        authBtn.title = 'התחברות / הרשמה';
       }
       loadArticles();
       checkAds();
     });
 
-    // Send to Telegram subscribers (/311)
     async function sendTelegramNotification(text, files = []) {
       try {
         const subSnap = await getDocs(collection(db, "telegram_subscribers"));
         subSnap.forEach(async (docSnap) => {
           const chatId = docSnap.data().chat_id;
-          
-          // Send Text
           await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'HTML' })
           });
 
-          // Send Files directly
           for (let file of files) {
             const formData = new FormData();
             formData.append('chat_id', chatId);
@@ -312,7 +316,6 @@
       }
     }
 
-    // Load Articles & Recommendation Engine
     async function loadArticles() {
       const snap = await getDocs(collection(db, "articles"));
       articlesData = [];
@@ -322,7 +325,6 @@
       const viewed = JSON.parse(localStorage.getItem('viewed_articles') || '[]');
 
       if (consent === 'accepted') {
-        // Advanced Recommendation Sorting
         articlesData.sort((a, b) => {
           const aViewed = viewed.includes(a.id);
           const bViewed = viewed.includes(b.id);
@@ -331,7 +333,6 @@
           return (b.createdAt || 0) - (a.createdAt || 0);
         });
       } else {
-        // Default Sorting
         articlesData.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       }
 
@@ -353,11 +354,9 @@
       }
 
       filtered.forEach(art => {
-        // Parse markdown bold and inline images
         let contentHtml = art.content || '';
         contentHtml = contentHtml.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
         
-        // Extract embedded images for lightbox
         const inlineImages = [];
         contentHtml = contentHtml.replace(/\[image:\s*(.*?)\]/g, (match, url) => {
           inlineImages.push(url);
@@ -402,7 +401,6 @@
       renderCategories();
     };
 
-    // Hierarchical Search
     window.handleSearch = function() {
       const q = document.getElementById('search-input').value.trim().toLowerCase();
       if (!q) {
@@ -410,7 +408,6 @@
         return;
       }
 
-      // Priority sort
       const results = [...articlesData].sort((a, b) => {
         const getScore = (item) => {
           if (item.title?.toLowerCase().includes(q)) return 5;
@@ -432,7 +429,6 @@
       renderArticles(results);
     };
 
-    // Flashes accordion
     async function loadFlashes() {
       const snap = await getDocs(collection(db, "flashes"));
       const container = document.getElementById('flashes-list');
@@ -464,7 +460,6 @@
       }
     };
 
-    // Contact Submit
     window.submitContact = async function(e) {
       e.preventDefault();
       const name = document.getElementById('c-name').value;
@@ -485,7 +480,6 @@
       document.getElementById('contact-form').reset();
     };
 
-    // Newsletter Submit
     window.submitNewsletter = async function(e) {
       e.preventDefault();
       const name = document.getElementById('nl-name').value;
@@ -497,7 +491,6 @@
       document.getElementById('newsletter-form').reset();
     };
 
-    // Lightbox Modal
     window.openLightbox = function(imgs, idx) {
       currentGalleryImages = imgs;
       galleryIndex = idx;
@@ -524,9 +517,8 @@
       document.getElementById('lb-counter').innerText = `(תמונה ${galleryIndex + 1} מתוך ${currentGalleryImages.length})`;
     }
 
-    // Ads Control Engine
     async function checkAds() {
-      if (currentUser) return; // Do not show ads to logged-in admins
+      if (currentUser) return;
       
       const adsSnap = await getDocs(collection(db, "ads"));
       const ads = [];
@@ -535,7 +527,7 @@
       if (ads.length === 0) return;
 
       const userViews = parseInt(localStorage.getItem('ad_views') || '0');
-      const selectedAd = ads[0]; // Pick active ad
+      const selectedAd = ads[0];
 
       if (selectedAd.maxUserViews && userViews >= selectedAd.maxUserViews) return;
 
@@ -550,7 +542,6 @@
       document.getElementById('ad-modal').classList.add('hidden');
     };
 
-    // Auth Modal Helpers
     window.openAuthModal = function() {
       document.getElementById('auth-modal').classList.remove('hidden');
     };
@@ -577,7 +568,6 @@
       }
     };
 
-    // Initial Load
     loadFlashes();
     loadArticles();
   </script>
