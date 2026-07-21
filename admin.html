@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>מערכת ניהול - חדשות ראשונות</title>
+  
+  <link rel="icon" type="image/png" href="https://i.ibb.co/4ZhnSV1Q/cropped-circle-1.png">
+
+  <!-- Tailwind CSS & Font Awesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Rubik', sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Admin Login Screen -->
+  <div id="login-screen" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+      <div class="text-center mb-6">
+        <img src="https://i.ibb.co/4ZhnSV1Q/cropped-circle-1.png" class="w-16 h-16 mx-auto mb-2 rounded-full">
+        <h1 class="text-2xl font-black text-red-500">פאנל ניהול</h1>
+        <p class="text-xs text-slate-400">התחבר למערכת הניהול של חדשות ראשונות</p>
+      </div>
+
+      <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold mb-1">אימייל מנהל <span class="text-red-500">*</span></label>
+          <input type="email" id="admin-email" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-1">סיסמה <span class="text-red-500">*</span></label>
+          <input type="password" id="admin-pass" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+        </div>
+        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg text-sm transition">
+          התחבר למערכת
+        </button>
+      </form>
+      <p id="login-error" class="text-red-400 text-xs text-center mt-4 hidden"></p>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard (Hidden until login) -->
+  <div id="admin-dashboard" class="hidden flex-grow flex flex-col">
+    
+    <!-- Top Bar -->
+    <header class="bg-slate-800 border-b border-slate-700 py-3 px-6 flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <img src="https://i.ibb.co/4ZhnSV1Q/cropped-circle-1.png" class="w-10 h-10 rounded-full">
+        <h1 class="text-lg font-black text-red-500">ניהול - חדשות ראשונות</h1>
+      </div>
+      <div class="flex items-center gap-4">
+        <span id="admin-user-display" class="text-xs text-slate-400 hidden md:inline"></span>
+        <button onclick="logoutAdmin()" class="bg-slate-700 hover:bg-slate-600 text-xs text-slate-200 px-3 py-1.5 rounded-lg transition">
+          התנתק <i class="fa-solid fa-right-from-bracket mr-1"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-slate-800/50 border-b border-slate-700 px-6 flex gap-2 overflow-x-auto">
+      <button onclick="switchTab('articles')" id="tab-btn-articles" class="tab-btn px-4 py-3 text-sm font-bold border-b-2 border-red-500 text-red-400 flex items-center gap-2">
+        <i class="fa-solid fa-newspaper"></i> כתבות
+      </button>
+      <button onclick="switchTab('flashes')" id="tab-btn-flashes" class="tab-btn px-4 py-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+        <i class="fa-solid fa-bolt"></i> מבזקים
+      </button>
+      <button onclick="switchTab('ads')" id="tab-btn-ads" class="tab-btn px-4 py-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+        <i class="fa-solid fa-rectangle-ad"></i> פרסומות
+      </button>
+      <button onclick="switchTab('newsletter')" id="tab-btn-newsletter" class="tab-btn px-4 py-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+        <i class="fa-solid fa-paper-plane"></i> ניוזלטר
+      </button>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 py-6 w-full flex-grow">
+
+      <!-- TAB 1: ARTICLES -->
+      <div id="tab-articles" class="tab-content active space-y-6">
+        
+        <!-- Add Article Form -->
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-md">
+          <h2 class="text-lg font-bold mb-4 text-red-400 flex items-center gap-2">
+            <i class="fa-solid fa-plus"></i> הוספת כתבה חדשה
+          </h2>
+          <form onsubmit="saveArticle(event)" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold mb-1">כותרת הכתבה <span class="text-red-500">*</span></label>
+                <input type="text" id="art-title" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold mb-1">קטגוריה <span class="text-red-500">*</span></label>
+                <input type="text" id="art-category" required placeholder="למשל: ביטחון, פוליטיקה, צבא" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold mb-1">שם הכתב / המערכת</label>
+                <input type="text" id="art-author" placeholder="למשל: מערכת חדשות ראשונות" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold mb-1">קישור לתמונה ראשית (URL)</label>
+                <input type="url" id="art-image" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold mb-1">תיאור קצר / תמצית</label>
+              <input type="text" id="art-desc" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold mb-1">תוכן הכתבה <span class="text-red-500">*</span></label>
+              <p class="text-[11px] text-slate-400 mb-1">
+                טיפ: להדגשה עטוף ב-`*טקסט*`. להוספת תמונה בגוף הכתבה השתמש ב-`[image: URL]`.
+              </p>
+              <textarea id="art-content" required rows="6" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold mb-1">תגיות (מופרדות בפסיקים)</label>
+              <input type="text" id="art-tags" placeholder="חדשות, צפון, מבזק" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+            </div>
+
+            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-6 rounded-lg text-sm transition">
+              פרסם כתבה
+            </button>
+          </form>
+        </div>
+
+        <!-- Articles List -->
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-md">
+          <h2 class="text-lg font-bold mb-4 text-slate-200">כתבות קיימות</h2>
+          <div id="admin-articles-list" class="space-y-3">
+            <p class="text-xs text-slate-400">טוען כתבות...</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TAB 2: FLASHES -->
+      <div id="tab-flashes" class="tab-content space-y-6">
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-md">
+          <h2 class="text-lg font-bold mb-4 text-amber-400 flex items-center gap-2">
+            <i class="fa-solid fa-bolt"></i> הוספת מבזק חדש
+          </h2>
+          <form onsubmit="saveFlash(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold mb-1">כותרת המבזק <span class="text-red-500">*</span></label>
+              <input type="text" id="flash-title" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">תוכן המבזק <span class="text-red-500">*</span></label>
+              <textarea id="flash-text" required rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm"></textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">קרדיט / כתב</label>
+              <input type="text" id="flash-author" placeholder="למשל: דסק המבזקים" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+            </div>
+            <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-6 rounded-lg text-sm transition">
+              פרסם מבזק
+            </button>
+          </form>
+        </div>
+
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-md">
+          <h2 class="text-lg font-bold mb-4 text-slate-200">מבזקים קיימים</h2>
+          <div id="admin-flashes-list" class="space-y-3">
+            <p class="text-xs text-slate-400">טוען מבזקים...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: ADS -->
+      <div id="tab-ads" class="tab-content space-y-6">
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-md">
+          <h2 class="text-lg font-bold mb-4 text-blue-400 flex items-center gap-2">
+            <i class="fa-solid fa-rectangle-ad"></i> הוספת פרסומת / באנר קופץ
+          </h2>
+          <form onsubmit="saveAd(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold mb-1">קישור לתמונת הפרסומת (URL) <span class="text-red-500">*</span></label>
+              <input type="url" id="ad-image-url" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">קישור יעד בלחיצה (URL)</label>
+              <input type="url" id="ad-link-url" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">מקסימום צפיות למשתמש</label>
+              <input type="number" id="ad-max-views" placeholder="למשל: 3" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+            </div>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg text-sm transition">
+              שמור פרסומת
+            </button>
+          </form>
+        </div>
+
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-md">
+          <h2 class="text-lg font-bold mb-4 text-slate-200">פרסומות קיימות</h2>
+          <div id="admin-ads-list" class="space-y-3">
+            <p class="text-xs text-slate-400">טוען פרסומות...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: NEWSLETTER & SUBSCRIBERS -->
+      <div id="tab-newsletter" class="tab-content space-y-6">
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-md">
+          <h2 class="text-lg font-bold mb-4 text-green-400 flex items-center gap-2">
+            <i class="fa-solid fa-users"></i> רשימת נרשמים לניוזלטר
+          </h2>
+          <div id="admin-newsletter-list" class="space-y-2">
+            <p class="text-xs text-slate-400">טוען נרשמים...</p>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Firebase Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCSIm0TdB3rNGg_8FFIoyNx5YQ-CGsLWDE",
+      authDomain: "hadshot-roshonot.firebaseapp.com",
+      projectId: "hadshot-roshonot",
+      storageBucket: "hadshot-roshonot.firebasestorage.app",
+      messagingSenderId: "444940332622",
+      appId: "1:444940332622:web:30071d5fc84590fca89d1f",
+      measurementId: "G-5G0R7MVSN1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('admin-dashboard').classList.remove('hidden');
+        document.getElementById('admin-user-display').innerText = user.email;
+        loadAllData();
+      } else {
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('admin-dashboard').classList.add('hidden');
+      }
+    });
+
+    window.handleAdminLogin = async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('admin-email').value;
+      const pass = document.getElementById('admin-pass').value;
+      const errEl = document.getElementById('login-error');
+
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+        errEl.classList.add('hidden');
+      } catch (err) {
+        errEl.innerText = "שגיאה בהתחברות: אימייל או סיסמה שגויים";
+        errEl.classList.remove('hidden');
+      }
+    };
+
+    window.logoutAdmin = function() {
+      signOut(auth);
+    };
+
+    window.switchTab = function(tabName) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('border-red-500', 'text-red-400');
+        btn.classList.add('border-transparent', 'text-slate-400');
+      });
+
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+      const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+      activeBtn.classList.remove('border-transparent', 'text-slate-400');
+      activeBtn.classList.add('border-red-500', 'text-red-400');
+    };
+
+    function loadAllData() {
+      loadAdminArticles();
+      loadAdminFlashes();
+      loadAdminAds();
+      loadAdminNewsletter();
+    }
+
+    // --- ARTICLES MANAGEMENT ---
+    async function loadAdminArticles() {
+      const snap = await getDocs(collection(db, "articles"));
+      const container = document.getElementById('admin-articles-list');
+      container.innerHTML = '';
+
+      snap.forEach(docSnap => {
+        const art = docSnap.data();
+        container.innerHTML += `
+          <div class="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-slate-700/60">
+            <div>
+              <span class="text-xs text-red-400 font-semibold">[${art.category || 'כללי'}]</span>
+              <strong class="text-sm mr-2">${art.title}</strong>
+            </div>
+            <button onclick="deleteArticle('${docSnap.id}')" class="text-xs bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded-lg transition">
+              מחק <i class="fa-solid fa-trash mr-1"></i>
+            </button>
+          </div>
+        `;
+      });
+    }
+
+    window.saveArticle = async function(e) {
+      e.preventDefault();
+      const title = document.getElementById('art-title').value;
+      const category = document.getElementById('art-category').value;
+      const author = document.getElementById('art-author').value;
+      const imageUrl = document.getElementById('art-image').value;
+      const description = document.getElementById('art-desc').value;
+      const content = document.getElementById('art-content').value;
+      const tags = document.getElementById('art-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+
+      await addDoc(collection(db, "articles"), {
+        title, category, author, imageUrl, description, content, tags, createdAt: Date.now()
+      });
+
+      alert("הכתבה פורסמה בהצלחה!");
+      e.target.reset();
+      loadAdminArticles();
+    };
+
+    window.deleteArticle = async function(id) {
+      if (confirm("האם למחוק כתבה זו?")) {
+        await deleteDoc(doc(db, "articles", id));
+        loadAdminArticles();
+      }
+    };
+
+    // --- FLASHES MANAGEMENT ---
+    async function loadAdminFlashes() {
+      const snap = await getDocs(collection(db, "flashes"));
+      const container = document.getElementById('admin-flashes-list');
+      container.innerHTML = '';
+
+      snap.forEach(docSnap => {
+        const f = docSnap.data();
+        container.innerHTML += `
+          <div class="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-slate-700/60">
+            <div>
+              <strong class="text-xs text-amber-400">${f.title}</strong>
+              <p class="text-xs text-slate-400">${f.text}</p>
+            </div>
+            <button onclick="deleteFlash('${docSnap.id}')" class="text-xs bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded-lg transition">
+              מחק
+            </button>
+          </div>
+        `;
+      });
+    }
+
+    window.saveFlash = async function(e) {
+      e.preventDefault();
+      const title = document.getElementById('flash-title').value;
+      const text = document.getElementById('flash-text').value;
+      const author = document.getElementById('flash-author').value;
+
+      await addDoc(collection(db, "flashes"), { title, text, author, createdAt: Date.now() });
+      alert("המבזק פורסם בהצלחה!");
+      e.target.reset();
+      loadAdminFlashes();
+    };
+
+    window.deleteFlash = async function(id) {
+      if (confirm("האם למחוק מבזק זה?")) {
+        await deleteDoc(doc(db, "flashes", id));
+        loadAdminFlashes();
+      }
+    };
+
+    // --- ADS MANAGEMENT ---
+    async function loadAdminAds() {
+      const snap = await getDocs(collection(db, "ads"));
+      const container = document.getElementById('admin-ads-list');
+      container.innerHTML = '';
+
+      snap.forEach(docSnap => {
+        const ad = docSnap.data();
+        container.innerHTML += `
+          <div class="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-slate-700/60">
+            <div class="flex items-center gap-3">
+              <img src="${ad.imageUrl}" class="w-12 h-12 object-cover rounded-lg">
+              <div class="text-xs">
+                <p class="text-slate-300 font-medium">יעד: ${ad.linkUrl || 'ללא'}</p>
+                <p class="text-slate-400">מקסימום צפיות: ${ad.maxUserViews || 'ללא הגבלה'}</p>
+              </div>
+            </div>
+            <button onclick="deleteAd('${docSnap.id}')" class="text-xs bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded-lg transition">
+              מחק
+            </button>
+          </div>
+        `;
+      });
+    }
+
+    window.saveAd = async function(e) {
+      e.preventDefault();
+      const imageUrl = document.getElementById('ad-image-url').value;
+      const linkUrl = document.getElementById('ad-link-url').value;
+      const maxUserViews = parseInt(document.getElementById('ad-max-views').value) || null;
+
+      await addDoc(collection(db, "ads"), { imageUrl, linkUrl, maxUserViews, createdAt: Date.now() });
+      alert("הפרסומת נשמרה!");
+      e.target.reset();
+      loadAdminAds();
+    };
+
+    window.deleteAd = async function(id) {
+      if (confirm("האם למחוק פרסומת זו?")) {
+        await deleteDoc(doc(db, "ads", id));
+        loadAdminAds();
+      }
+    };
+
+    // --- NEWSLETTER SUBSCRIBERS ---
+    async function loadAdminNewsletter() {
+      const snap = await getDocs(collection(db, "newsletter"));
+      const container = document.getElementById('admin-newsletter-list');
+      container.innerHTML = '';
+
+      if (snap.empty) {
+        container.innerHTML = `<p class="text-xs text-slate-400">אין נרשמים עדיין.</p>`;
+        return;
+      }
+
+      snap.forEach(docSnap => {
+        const sub = docSnap.data();
+        container.innerHTML += `
+          <div class="p-2.5 bg-slate-900 rounded-lg text-xs flex justify-between items-center border border-slate-700/40">
+            <span><strong>${sub.name}</strong> (${sub.email})</span>
+          </div>
+        `;
+      });
+    }
+  </script>
+</body>
+</html>
