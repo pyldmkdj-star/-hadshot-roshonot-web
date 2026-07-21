@@ -1,0 +1,22 @@
+{
+  "short_name": "חדשות ראשונות",
+  "name": "חדשות ראשונות - המקום הנכון לחדשות אמינות",
+  "icons": [
+    {
+      "src": "https://i.ibb.co/4ZhnSV1Q/cropped-circle-1.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://i.ibb.co/4ZhnSV1Q/cropped-circle-1.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0f172a",
+  "theme_color": "#1e293b",
+  "display": "standalone",
+  "orientation": "portrait"
+}
+
