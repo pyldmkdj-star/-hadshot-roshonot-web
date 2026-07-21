@@ -247,6 +247,8 @@
     const auth = getAuth(app);
 
     const BOT_TOKEN = "8653137296:AAEcyuGw0896waV2NjQm9_1Og6BQD776IR8";
+    const CHAT_ID = "-1004227502554";
+    
     let currentUser = null;
     let articlesData = [];
     let currentCategory = 'all';
@@ -292,25 +294,21 @@
 
     async function sendTelegramNotification(text, files = []) {
       try {
-        const subSnap = await getDocs(collection(db, "telegram_subscribers"));
-        subSnap.forEach(async (docSnap) => {
-          const chatId = docSnap.data().chat_id;
-          await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'HTML' })
-          });
-
-          for (let file of files) {
-            const formData = new FormData();
-            formData.append('chat_id', chatId);
-            formData.append('photo', file);
-            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-              method: 'POST',
-              body: formData
-            });
-          }
+        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ chat_id: CHAT_ID, text: text, parse_mode: 'HTML' })
         });
+
+        for (let file of files) {
+          const formData = new FormData();
+          formData.append('chat_id', CHAT_ID);
+          formData.append('photo', file);
+          await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+            method: 'POST',
+            body: formData
+          });
+        }
       } catch (e) {
         console.error("Telegram Send Error", e);
       }
